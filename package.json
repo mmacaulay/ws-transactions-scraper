@@ -1,0 +1,23 @@
+{
+  "name": "ws-transactions-scraper",
+  "version": "1.0.0",
+  "description": "Wealthsimple Transactions on demand!",
+  "homepage": "https://github.com/mmacaulay/ws-transactions-scraper#readme",
+  "bugs": {
+    "url": "https://github.com/mmacaulay/ws-transactions-scraper/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mmacaulay/ws-transactions-scraper.git"
+  },
+  "license": "MIT",
+  "author": "",
+  "type": "commonjs",
+  "main": "",
+  "scripts": {
+    "build": "bookmarklet ws-visa.js build/ws-visa-bookmarklet.js"
+  },
+  "devDependencies": {
+    "bookmarklet": "^3.0.0"
+  }
+}
