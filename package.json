@@ -15,7 +15,7 @@
   "type": "commonjs",
   "main": "",
   "scripts": {
-    "build": "bookmarklet ws-visa.js build/ws-visa-bookmarklet.js"
+    "build": "bookmarklet ws-visa.js build/ws-visa-bookmarklet.js && bookmarklet ws-chequing.js build/ws-chequing-bookmarklet.js"
   },
   "devDependencies": {
     "bookmarklet": "^3.0.0"

@@ -1,12 +1,23 @@
-# Wealthsimple Transactions Scraper
-Tired of waiting for monthly credit card statements from Wealthsimple in a CSV format that can't be imported into standard accounting software? Me too! Now you can download them any time, in Quicken (QFX) format for easy import into accounting tools like Quicken or YNAB.
+# Wealthsimple Transactions Scraper 🙈
+Tired of waiting for monthly credit card or chequing account statements from Wealthsimple in a CSV format that can't be imported into standard accounting software? Me too! Now you can download them any time, in Quicken (QFX) format for easy import into accounting tools like Quicken or YNAB.
+
+## Account support
+
+The first version of this script ([ws-visa.js](ws-visa.js)) was built for the Wealthsimple Visa credit card, there is now a second script ([ws-chequing.js](ws-chequing.js)) that works on chequing accounts.
 
 ## Installation
 
-- `npm install && npm run build`
-- In your browser: add bookmark to your bookmarks toolbar with name `WS CC transactions` (or whatever you want) and set the URL to the contents of `build/ws-visa-bookmarklet.js`
+Build:
+```
+npm install && npm run build
+```
 
-Disclaimer: it should go without saying, but you should understand what this code is doing before running it while logged in to your financial institution's website.
+In your browser:
+  - add bookmark to your bookmarks toolbar with helpful name such as `WS CC transactions`
+  - copy the contents of `build/ws-<account-type>-bookmarklet.json`
+  - paste into URL field of bookmark
+
+ **Disclaimer**: it should go without saying, but it is your responsibility to understand what this code is doing before running it on your financial institution's website.
 
 ## Usage
 
