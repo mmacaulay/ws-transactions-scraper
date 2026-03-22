@@ -75,10 +75,9 @@
     const date = parseDate(dateText);
     if (!date) return;
 
-    const transactionContainer = h2.nextElementSibling;
-    if (!transactionContainer) return;
-
-    const txRows = transactionContainer.querySelectorAll('[data-fullstory="cash-activities"]');
+    let sibling = h2.parentElement.nextElementSibling;
+    while (sibling && !sibling.querySelector('h2')) {
+      const txRows = sibling.querySelectorAll('[data-fullstory="cash-activities"]');
 
     txRows.forEach(row => {
       try {
@@ -110,6 +109,9 @@
         console.warn('Error parsing transaction row:', e, row);
       }
     });
+
+      sibling = sibling.nextElementSibling;
+    }
   });
 
   console.log(`Found ${transactions.length} transactions`);
@@ -200,7 +202,7 @@ NEWFILEUID:NONE
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `transactions-${formatDateOFX(now)}.qfx`;
+  a.download = `ws-visa-transactions-${formatDateOFX(now)}.qfx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

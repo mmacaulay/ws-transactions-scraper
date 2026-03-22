@@ -47,15 +47,16 @@
       let sibling = current.previousElementSibling;
 
       while (sibling) {
-        if (sibling.tagName === 'H2') {
-          const text = sibling.textContent.trim();
+        const h2 = sibling.tagName === 'H2' ? sibling : sibling.querySelector('h2');
+        if (h2) {
+          const text = h2.textContent.trim();
           const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                               'July', 'August', 'September', 'October', 'November', 'December'];
           const looksLikeDate = monthNames.some(m => text.includes(m)) ||
                                 text.toLowerCase() === 'yesterday' ||
                                 text.toLowerCase() === 'today';
           if (looksLikeDate) {
-            return sibling.textContent.trim();
+            return h2.textContent.trim();
           }
         }
         sibling = sibling.previousElementSibling;
@@ -286,7 +287,7 @@ NEWFILEUID:NONE
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `bank-transactions-${formatDateOFX(now)}.qfx`;
+  a.download = `ws-chequing-transactions-${formatDateOFX(now)}.qfx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
