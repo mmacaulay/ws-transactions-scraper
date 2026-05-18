@@ -1,4 +1,4 @@
-(async function() {
+(function() {
   const transactions = [];
 
   function parseDate(dateText) {
@@ -36,12 +36,8 @@
     return isNegative ? -amount : amount;
   }
 
-  function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  }
-
-  function findDateForButton(button) {
-    let current = button.parentElement;
+  function findDateForElement(el) {
+    let current = el.parentElement;
 
     while (current) {
       let sibling = current.previousElementSibling;
@@ -68,13 +64,6 @@
     return null;
   }
 
-  function extractFieldFromDiv(div) {
-    const innerDiv = div?.children[1];
-    const deeperDiv = innerDiv?.children[0];
-    const p = deeperDiv?.querySelector('p');
-    return p?.textContent?.trim() || null;
-  }
-
   function formatDateOFX(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -84,13 +73,11 @@
 
   function mapTransactionType(type, amount) {
     const lower = type.toLowerCase();
-    // Use amount sign as fallback: negative = debit, positive = credit
     if (lower.includes('interest')) return 'INT';
     if (lower.includes('transfer')) return 'XFER';
     if (lower.includes('withdrawal')) return 'DEBIT';
     if (lower.includes('deposit')) return 'DEP';
     if (lower.includes('credit card')) return 'PAYMENT';
-    // Fallback based on amount sign
     return amount < 0 ? 'DEBIT' : 'CREDIT';
   }
 
@@ -102,106 +89,66 @@
     return `${dateStr}${payeeClean}${amountStr}${suffix}`;
   }
 
-  // Find all amount elements using the dollar pattern
-  const allPs = document.querySelectorAll('p');
-  const amountPattern = /^\s*[−-]?\s*\$[\d,]+\.\d{2}\s*CAD\s*$/;
+  // Find all buttons that contain a dollar amount span
+  const amountRe = /^\s*[−\-]?\s*\$[\d,]+\.\d{2}/;
 
-  const amountElements = Array.from(allPs).filter(p => amountPattern.test(p.textContent));
+  const txButtons = Array.from(document.querySelectorAll('button')).filter(btn =>
+    Array.from(btn.querySelectorAll('span')).some(s =>
+      s.children.length === 0 && amountRe.test(s.textContent)
+    )
+  );
 
-  console.log(`Found ${amountElements.length} potential transactions`);
+  console.log(`Found ${txButtons.length} transaction buttons`);
 
-  if (amountElements.length === 0) {
-    alert('No transactions found!');
+  if (txButtons.length === 0) {
+    // Diagnostics to help identify the structure
+    const allBtns = document.querySelectorAll('button');
+    console.log(`Total buttons on page: ${allBtns.length}`);
+    const sampleSpans = Array.from(document.querySelectorAll('span'))
+      .filter(s => s.children.length === 0 && s.textContent.includes('$'))
+      .slice(0, 5);
+    console.log('Sample $ spans:', sampleSpans.map(s => `<${s.tagName}> "${s.textContent.trim()}"`));
+    alert('No transactions found! Check the browser console for diagnostics.');
     return;
   }
 
-  // Process all transactions
-  for (let i = 0; i < amountElements.length; i++) {
-    const amountP = amountElements[i];
-
-    if (i % 10 === 0) {
-      console.log(`Processing transaction ${i + 1} of ${amountElements.length}...`);
-    }
-
+  txButtons.forEach((button, i) => {
     try {
-      const amountText = amountP.textContent.trim();
-      const amount = parseAmount(amountText);
+      // All text content is in leaf spans with data-fs-privacy-rule
+      const spans = Array.from(button.querySelectorAll('span[data-fs-privacy-rule]'))
+        .filter(s => s.children.length === 0 && s.textContent.trim().length > 0);
 
-      let button = amountP;
-      while (button && button.tagName !== 'BUTTON') {
-        button = button.parentElement;
+      const amountSpan = spans.find(s => amountRe.test(s.textContent));
+      const textSpans = spans.filter(s => s !== amountSpan);
+
+      const amount = parseAmount(amountSpan?.textContent || '');
+      if (amount === null) {
+        console.warn(`[${i}] Could not parse amount`);
+        return;
       }
 
-      if (!button) {
-        console.warn('Could not find button for amount:', amountText);
-        continue;
+      // spans in order: payee, type, account name (we only need first two)
+      const payee = textSpans[0]?.textContent.trim() || 'UNKNOWN';
+      const type = textSpans[1]?.textContent.trim() || 'UNKNOWN';
+
+      const dateText = findDateForElement(button);
+      if (!dateText) {
+        console.warn(`[${i}] Could not find date for: ${payee}`);
+        return;
       }
+      const date = parseDate(dateText);
+      if (!date) return;
 
-      const dateText = findDateForButton(button);
-      const date = dateText ? parseDate(dateText) : null;
-
-      const buttonFirstDiv = button.querySelector('div');
-      const firstChildDiv = buttonFirstDiv?.children[0];
-      const secondNestedDiv = firstChildDiv?.children[1];
-      const typeP = secondNestedDiv?.querySelector('p');
-      const type = typeP?.textContent?.trim() || 'UNKNOWN';
-
-      const typeLower = type.toLowerCase();
-      const skipDetailPanel = typeLower.includes('credit card') || typeLower === 'interest';
-
-      let from = null;
-      let to = null;
-      let payee;
-
-      if (skipDetailPanel) {
-        payee = type;
-      } else {
-        button.click();
-        await sleep(300);
-
-        const buttonParent = button.parentElement;
-        const detailPanel = buttonParent.nextElementSibling;
-
-        const layer1 = detailPanel?.children[0];
-        const layer2 = layer1?.children[0];
-
-        const fromDiv = layer2?.children[0];
-        const toDiv = layer2?.children[1];
-
-        from = extractFieldFromDiv(fromDiv);
-        to = extractFieldFromDiv(toDiv);
-
-        if (typeLower.includes('transfer in')) {
-          payee = from || to || type;
-        } else {
-          payee = to || from || type;
-        }
-
-        button.click();
-        await sleep(200);
-      }
-
-      if (!date) {
-        console.warn('Could not parse date for transaction:', amountText);
-        continue;
-      }
-
-      transactions.push({
-        date,
-        payee,
-        type,
-        amount
-      });
-
+      transactions.push({ date, payee, type, amount });
     } catch (e) {
-      console.warn('Error processing transaction:', e);
+      console.warn(`Error processing button ${i}:`, e);
     }
-  }
+  });
 
   console.log(`Extracted ${transactions.length} transactions`);
 
   if (transactions.length === 0) {
-    alert('No transactions could be extracted!');
+    alert('No transactions could be extracted! Check the browser console for warnings.');
     return;
   }
 
