@@ -89,12 +89,12 @@
     return `${dateStr}${payeeClean}${amountStr}${suffix}`;
   }
 
-  // Find all buttons that contain a dollar amount span
+  // Find all buttons that contain a dollar amount in a <p> tag
   const amountRe = /^\s*[−\-]?\s*\$[\d,]+\.\d{2}/;
 
   const txButtons = Array.from(document.querySelectorAll('button')).filter(btn =>
-    Array.from(btn.querySelectorAll('span')).some(s =>
-      s.children.length === 0 && amountRe.test(s.textContent)
+    Array.from(btn.querySelectorAll('p')).some(p =>
+      p.children.length === 0 && amountRe.test(p.textContent)
     )
   );
 
@@ -104,32 +104,34 @@
     // Diagnostics to help identify the structure
     const allBtns = document.querySelectorAll('button');
     console.log(`Total buttons on page: ${allBtns.length}`);
-    const sampleSpans = Array.from(document.querySelectorAll('span'))
-      .filter(s => s.children.length === 0 && s.textContent.includes('$'))
+    const samplePs = Array.from(document.querySelectorAll('p'))
+      .filter(p => p.children.length === 0 && p.textContent.includes('$'))
       .slice(0, 5);
-    console.log('Sample $ spans:', sampleSpans.map(s => `<${s.tagName}> "${s.textContent.trim()}"`));
+    console.log('Sample $ ps:', samplePs.map(p => `<${p.tagName}> "${p.textContent.trim()}"`));
     alert('No transactions found! Check the browser console for diagnostics.');
     return;
   }
 
   txButtons.forEach((button, i) => {
     try {
-      // All text content is in leaf spans with data-fs-privacy-rule
-      const spans = Array.from(button.querySelectorAll('span[data-fs-privacy-rule]'))
-        .filter(s => s.children.length === 0 && s.textContent.trim().length > 0);
+      // All text content is in leaf <p> tags with data-fs-privacy-rule
+      // p[0]: name/payee, p[1]: type detail, p[2]: account info (skip), p[3]: amount
+      const ps = Array.from(button.querySelectorAll('p[data-fs-privacy-rule]'))
+        .filter(p => p.children.length === 0 && p.textContent.trim().length > 0);
 
-      const amountSpan = spans.find(s => amountRe.test(s.textContent));
-      const textSpans = spans.filter(s => s !== amountSpan);
+      const amountP = ps.find(p => amountRe.test(p.textContent));
+      const textPs = ps.filter(p => p !== amountP);
 
-      const amount = parseAmount(amountSpan?.textContent || '');
+      const amount = parseAmount(amountP?.textContent || '');
       if (amount === null) {
         console.warn(`[${i}] Could not parse amount`);
         return;
       }
 
-      // spans in order: payee, type, account name (we only need first two)
-      const payee = textSpans[0]?.textContent.trim() || 'UNKNOWN';
-      const type = textSpans[1]?.textContent.trim() || 'UNKNOWN';
+      // p[0] is the main name; combine p[0]+p[1] for type keyword matching
+      // since WealthSimple swaps their order depending on transaction type
+      const payee = textPs[0]?.textContent.trim() || 'UNKNOWN';
+      const type = [textPs[0], textPs[1]].filter(Boolean).map(p => p.textContent.trim()).join(' ');
 
       const dateText = findDateForElement(button);
       if (!dateText) {
