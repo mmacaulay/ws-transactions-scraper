@@ -60,10 +60,10 @@
   }
 
   // Extract transactions
-  const allH2s = document.querySelectorAll('h2');
+  const allH3s = document.querySelectorAll('h3');
 
-  allH2s.forEach(h2 => {
-    const dateText = h2.textContent.trim();
+  allH3s.forEach(h3 => {
+    const dateText = h3.textContent.trim();
     const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
                         'July', 'August', 'September', 'October', 'November', 'December'];
     const looksLikeDate = monthNames.some(m => dateText.includes(m)) ||
@@ -75,8 +75,8 @@
     const date = parseDate(dateText);
     if (!date) return;
 
-    let sibling = h2.parentElement.nextElementSibling;
-    while (sibling && !sibling.querySelector('h2')) {
+    let sibling = h3.parentElement.nextElementSibling;
+    while (sibling && !sibling.querySelector('h3')) {
       const txRows = sibling.querySelectorAll('[data-fullstory="cash-activities"]');
 
     txRows.forEach(row => {
