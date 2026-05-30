@@ -37,27 +37,43 @@
   }
 
   function findDateForElement(el) {
-    let current = el.parentElement;
+    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                        'July', 'August', 'September', 'October', 'November', 'December'];
 
-    while (current) {
-      let sibling = current.previousElementSibling;
+    function looksLikeDate(text) {
+      return monthNames.some(m => text.includes(m)) ||
+             text.toLowerCase() === 'yesterday' ||
+             text.toLowerCase() === 'today';
+    }
 
-      while (sibling) {
-        const h2 = sibling.tagName === 'H2' ? sibling : sibling.querySelector('h2');
-        if (h2) {
-          const text = h2.textContent.trim();
-          const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                              'July', 'August', 'September', 'October', 'November', 'December'];
-          const looksLikeDate = monthNames.some(m => text.includes(m)) ||
-                                text.toLowerCase() === 'yesterday' ||
-                                text.toLowerCase() === 'today';
-          if (looksLikeDate) {
-            return h2.textContent.trim();
-          }
-        }
-        sibling = sibling.previousElementSibling;
+    function findHeading(node) {
+      return (node.tagName === 'H2' || node.tagName === 'H3') ? node
+           : node.querySelector('h2, h3');
+    }
+
+    // Check el's own previous siblings first (h3 may be a sibling of the button)
+    let sibling = el.previousElementSibling;
+    while (sibling) {
+      const h = findHeading(sibling);
+      if (h) {
+        const text = h.textContent.trim();
+        if (looksLikeDate(text)) return text;
       }
+      sibling = sibling.previousElementSibling;
+    }
 
+    // Walk up and check previous siblings of each ancestor
+    let current = el.parentElement;
+    while (current) {
+      let ancsib = current.previousElementSibling;
+      while (ancsib) {
+        const h = findHeading(ancsib);
+        if (h) {
+          const text = h.textContent.trim();
+          if (looksLikeDate(text)) return text;
+        }
+        ancsib = ancsib.previousElementSibling;
+      }
       current = current.parentElement;
     }
 
